@@ -1,0 +1,434 @@
+"use client";
+
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Home,
+  User,
+  Settings,
+  Bell,
+  Grid,
+  LogOut,
+  Plus,
+  Tablet,
+  Compass,
+  Scissors,
+  Mail,
+} from "lucide-react";
+import { SignIn, SignOutButton, UserButton, useUser } from "@clerk/nextjs";
+import Link from "next/link";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Dialog } from "./ui/dialog";
+import { CourseFormDialog } from "./CourseFormDialog";
+import { CourseList } from "./courseList";
+
+const AnimatedMenuToggle = ({ toggle, isOpen }) => (
+  <button
+    onClick={toggle}
+    aria-label="Toggle menu"
+    className="focus:outline-none z-999"
+  >
+    <motion.div animate={{ y: isOpen ? 13 : 0 }} transition={{ duration: 0.3 }}>
+      <motion.svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        initial="closed"
+        animate={isOpen ? "open" : "closed"}
+        transition={{ duration: 0.3 }}
+        className="text-black"
+      >
+        <motion.path
+          fill="transparent"
+          strokeWidth="3"
+          stroke="currentColor"
+          strokeLinecap="round"
+          variants={{
+            closed: { d: "M 2 2.5 L 22 2.5" },
+            open: { d: "M 3 16.5 L 17 2.5" },
+          }}
+        />
+        <motion.path
+          fill="transparent"
+          strokeWidth="3"
+          stroke="currentColor"
+          strokeLinecap="round"
+          variants={{
+            closed: { d: "M 2 12 L 22 12", opacity: 1 },
+            open: { opacity: 0 },
+          }}
+          transition={{ duration: 0.2 }}
+        />
+        <motion.path
+          fill="transparent"
+          strokeWidth="3"
+          stroke="currentColor"
+          strokeLinecap="round"
+          variants={{
+            closed: { d: "M 2 21.5 L 22 21.5" },
+            open: { d: "M 3 2.5 L 17 16.5" },
+          }}
+        />
+      </motion.svg>
+    </motion.div>
+  </button>
+);
+
+const CollapsibleSection = ({ title, children }) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="mb-4">
+      <button
+        className="w-full flex items-center justify-between py-2 px-4 rounded-xl hover:bg-gray-100"
+        onClick={() => setOpen(!open)}
+      >
+        <span className="font-semibold">{title}</span>
+        {open ? <XIcon /> : <MenuIcon />}
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <div className="p-2">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const MenuIcon = () => (
+  <motion.svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <motion.line x1="3" y1="12" x2="21" y2="12" />
+  </motion.svg>
+);
+
+const XIcon = () => (
+  <motion.svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <motion.line x1="18" y1="6" x2="6" y2="18" />
+    <motion.line x1="6" y1="6" x2="18" y2="18" />
+  </motion.svg>
+);
+
+const Sidebar = () => {
+  const [courseList, setCourseList] = useState([]);
+  const { user, isSignedIn } = useUser();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+ // In sidebar.jsx, update the handleCreateCourse function:
+const handleCreateCourse = (newCourse) => {
+  setCourseList(prevCourses => [...prevCourses, {
+    ...newCourse,
+    // Ensure we're not including any React nodes or functions in the state
+    generatedContent: typeof newCourse.generatedContent === 'string' 
+      ? newCourse.generatedContent 
+      : JSON.stringify(newCourse.generatedContent)
+  }]);
+};
+
+  const mobileSidebarVariants = {
+    hidden: { x: "-100%" },
+    visible: { x: 0 },
+  };
+
+  const toggleSidebar = () => setIsOpen(!isOpen);
+
+  return (
+    <div className="flex h-screen">
+      {/* Mobile Sidebar */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={mobileSidebarVariants}
+            transition={{ duration: 0.3 }}
+            className="md:hidden fixed inset-0 z-50 bg-white text-black"
+          >
+            <div className="flex flex-col h-full">
+              {/* Profile Section */}
+              <div className="p-4 border-b border-gray-200">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                    {isSignedIn ? <UserButton /> : <User className="h-6 w-6" />}
+                  </div>
+                  <div>
+                    <p className="font-semibold">LMS</p>
+                    <p className="text-sm text-gray-500">
+                      {isSignedIn
+                        ? user?.firstName ||
+                          user?.emailAddresses[0]?.emailAddress
+                        : "Guest"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {/* Course List Section */}
+              <div className="flex-1 overflow-y-auto">
+                <CourseList
+                  courses={courseList}
+                  onNewCourse={() => setIsDialogOpen(true)}
+                />
+              </div>
+
+              {/* Create Course Dialog */}
+              <CourseFormDialog
+                onCourseCreate={handleCreateCourse}
+                isOpen={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+              />
+
+              {/* Navigation Section */}
+              <nav className="p-4 border-t border-gray-200">
+                <ul className="space-y-2">
+                  <li>
+                    <Link href="/dashboard">
+                      <button className="flex gap-3 font-medium text-sm items-center w-full py-3 px-4 rounded-xl hover:bg-gray-100 transition-colors">
+                        <Grid className="h-5 w-5" />
+                        Dashboard
+                      </button>
+                    </Link>
+                  </li>
+                  <li>
+                    <button className="flex gap-3 font-medium text-sm items-center w-full py-3 px-4 rounded-xl hover:bg-gray-100 transition-colors">
+                      <Tablet className="h-5 w-5" />
+                      My Learning
+                    </button>
+                  </li>
+                  <li>
+                    <button className="flex gap-3 font-medium text-sm items-center w-full py-3 px-4 rounded-xl hover:bg-gray-100 transition-colors">
+                      <Compass className="h-5 w-5" />
+                      Explore Courses
+                    </button>
+                  </li>
+                  <li>
+                    <button className="flex gap-3 font-medium text-sm items-center w-full py-3 px-4 rounded-xl hover:bg-gray-100 transition-colors">
+                      <Scissors className="h-5 w-5" />
+                      AI Tools
+                    </button>
+                  </li>
+                  <li>
+                    <button className="flex gap-3 font-medium text-sm items-center w-full py-3 px-4 rounded-xl hover:bg-gray-100 transition-colors">
+                      <Mail className="h-5 w-5" />
+                      Billing
+                    </button>
+                  </li>
+                  <li>
+                    <button className="flex gap-3 font-medium text-sm items-center w-full py-3 px-4 rounded-xl hover:bg-gray-100 transition-colors">
+                      <User className="h-5 w-5" />
+                      Profile
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+              {/* Footer / Action Button */}
+              <div className="p-4 border-t border-gray-200">
+                {isSignedIn ? (
+                  <SignOutButton>
+                    <button className="w-full font-medium text-sm p-2 text-center bg-red-100 rounded-xl hover:bg-red-200 flex items-center justify-center gap-2">
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
+                    </button>
+                  </SignOutButton>
+                ) : (
+                  <SignIn mode="modal">
+                    <button className="w-full font-medium text-sm p-2 text-center bg-blue-100 rounded-xl hover:bg-blue-200">
+                      Sign In
+                    </button>
+                  </SignIn>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Desktop Sidebar */}
+      <div className="hidden md:flex flex-col fixed top-0 left-0 h-full w-64 bg-white text-black shadow">
+        {/* Profile Section */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+              {isSignedIn ? <UserButton /> : <User className="h-6 w-6" />}
+            </div>
+            <div>
+              <p className="font-semibold">LMS</p>
+              <p className="text-sm text-gray-500">
+                {isSignedIn
+                  ? user?.firstName || user?.emailAddresses[0]?.emailAddress
+                  : "Guest"}
+              </p>
+            </div>
+          </div>
+        </div>
+        {/* Create New Course Button */}
+        <div className="p-4">
+          <CourseFormDialog onCourseCreate={handleCreateCourse} />
+        </div>
+
+        {/* Navigation Section */}
+        <nav className="flex-1 p-4 overflow-y-auto">
+          <ul className="space-y-2">
+            <li>
+              <button className="flex gap-3 font-medium text-sm items-center w-full py-3 px-4 rounded-xl hover:bg-gray-100 transition-colors">
+                <Grid className="h-5 w-5" />
+                Dashboard
+              </button>
+            </li>
+            <li>
+              <button className="flex gap-3 font-medium text-sm items-center w-full py-3 px-4 rounded-xl hover:bg-gray-100 transition-colors">
+                <Tablet className="h-5 w-5" />
+                My Learning
+              </button>
+            </li>
+            <li>
+              <button className="flex gap-3 font-medium text-sm items-center w-full py-3 px-4 rounded-xl hover:bg-gray-100 transition-colors">
+                <Compass className="h-5 w-5" />
+                Explore Courses
+              </button>
+            </li>
+            <li>
+              <button className="flex gap-3 font-medium text-sm items-center w-full py-3 px-4 rounded-xl hover:bg-gray-100 transition-colors">
+                <Scissors className="h-5 w-5" />
+                AI Tools
+              </button>
+            </li>
+            <li>
+              <button className="flex gap-3 font-medium text-sm items-center w-full py-3 px-4 rounded-xl hover:bg-gray-100 transition-colors">
+                <Mail className="h-5 w-5" />
+                Billing
+              </button>
+            </li>
+            <li>
+              <button className="flex gap-3 font-medium text-sm items-center w-full py-3 px-4 rounded-xl hover:bg-gray-100 transition-colors">
+                <User className="h-5 w-5" />
+                Profile
+              </button>
+            </li>
+          </ul>
+          {/* Toggleable Sections */}
+          {/* <div className="mt-4">
+            <CollapsibleSection title="Extra Options">
+              <ul>
+                <li>
+                  <button
+                    className="w-full font-medium text-sm text-left p-2 rounded-xl hover:bg-gray-100">
+                    Subscriptions
+                  </button>
+                </li>
+                <li>
+                  <button
+                    className="w-full font-medium text-sm text-left p-2 rounded-xl hover:bg-gray-100">
+                    Appearance
+                  </button>
+                </li>
+              </ul>
+            </CollapsibleSection>
+            <CollapsibleSection title="More Info">
+              <p className="text-sm text-gray-500">
+                Additional details and settings can be found here.
+              </p>
+            </CollapsibleSection>
+          </div> */}
+        </nav>
+        {/* Footer / Action Button */}
+        <div className="p-4 border-t border-gray-200">
+          {isSignedIn ? (
+            <SignOutButton>
+              <button className="w-full font-medium text-sm p-2 text-center bg-red-100 rounded-xl hover:bg-red-200 flex items-center justify-center gap-2">
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </button>
+            </SignOutButton>
+          ) : (
+            <SignIn mode="modal">
+              <button className="w-full font-medium text-sm p-2 text-center bg-blue-100 rounded-xl hover:bg-blue-200">
+                Sign In
+              </button>
+            </SignIn>
+          )}
+        </div>
+      </div>
+      {/* Main Content Area */}
+      <div className="flex-1 ml-0 md:ml-64 transition-all duration-300">
+        {/* Top bar for mobile toggle */}
+        <div className="p-4 bg-gray-100 border-b border-gray-200 md:hidden flex justify-between items-center">
+          <h1 className="text-xl font-bold">Workspace</h1>
+          <AnimatedMenuToggle toggle={toggleSidebar} isOpen={isOpen} />
+        </div>
+        <div className="p-6 m-6 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500">
+          <h1 className="text-2xl text-white font-bold">
+            Welcome to online learning platform
+          </h1>
+          <p className="text-sm text-white font-medium">
+            Learn Create And Explore Your Favourite Courses
+          </p>
+        </div>
+        {/* course list */}
+        <div className="p-6 m-6 mt-5 bg-white rounded-lg shadow-sm">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold">Courses</h1>
+            <Button
+              className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
+              onClick={() => setIsDialogOpen(true)}
+            >
+              <Plus className="h-5 w-5" />
+              New Course
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
+            {courseList.length === 0 ? (
+              <div className="flex flex-col gap-4 p-10 text-center w-full col-span-full">
+                <p className="text-gray-600 font-medium">No courses found</p>
+                <CourseFormDialog onCourseCreate={handleCreateCourse}>
+                  <Button className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-md w-full max-w-xs mx-auto">
+                    Create New Course
+                  </Button>
+                </CourseFormDialog>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+                {courseList.map((course, index) => (
+                  <div
+                    key={index}
+                    className="bg-gray-50 p-4 rounded-lg hover:shadow-md transition-shadow"
+                  >
+                    <h3 className="font-medium text-gray-800">{course}</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Course description goes here
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export { Sidebar };
