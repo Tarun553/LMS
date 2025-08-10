@@ -24,6 +24,7 @@ import { Dialog } from "./ui/dialog";
 import { CourseFormDialog } from "./CourseFormDialog";
 import { CourseList } from "./courseList";
 
+
 const AnimatedMenuToggle = ({ toggle, isOpen }) => (
   <button
     onClick={toggle}
@@ -373,44 +374,8 @@ const Sidebar = ({ showMainContent = true }) => {
           </div>
           
           {/* course list */}
-          <div className="p-6 m-6 mt-5 bg-white rounded-lg shadow-sm">
-            <div className="flex justify-between items-center mb-4">
-              <h1 className="text-2xl font-bold">Courses</h1>
-              <Button
-                className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
-                onClick={() => setIsDialogOpen(true)}
-              >
-                <Plus className="h-5 w-5" />
-                New Course
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
-              {courseList.length === 0 ? (
-                <div className="flex flex-col gap-4 p-10 text-center w-full col-span-full">
-                  <p className="text-gray-600 font-medium">No courses found</p>
-                  <CourseFormDialog onCourseCreate={handleCreateCourse}>
-                    <Button className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-md w-full max-w-xs mx-auto">
-                      Create New Course
-                    </Button>
-                  </CourseFormDialog>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-                  {courseList.map((course, index) => (
-                    <div
-                      key={index}
-                      className="bg-gray-50 p-4 rounded-lg hover:shadow-md transition-shadow"
-                    >
-                      <h3 className="font-medium text-gray-800">{course}</h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Course description goes here
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          <CourseList courses={courseList} />
+         
         </div>
       )}
       

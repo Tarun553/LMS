@@ -2,44 +2,65 @@
 import { db } from "@/config/db";
 import { NextResponse } from "next/server";
 import { courseTabel } from "@/config/schema";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
+import { currentUser } from "@clerk/nextjs/server";
 
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
-    const courseId = searchParams.get('courseId');
+    const courseId = searchParams.get("courseId");
+    const user = await currentUser();
+    const userEmail = user?.primaryEmailAddress?.emailAddress;
 
-    if (!courseId) {
+    if (!userEmail) {
       return NextResponse.json(
-        { error: "Course ID is required" },
-        { status: 400 }
+        { error: "User not authenticated" },
+        { status: 401 }
       );
     }
 
-    console.log('Searching for course with cid:', courseId); // Debug log
+    if (courseId) {
+      // Get single course by ID
+      const [course] = await db
+        .select()
+        .from(courseTabel)
+        .where(eq(courseTabel.cid, courseId));
 
-    const result = await db
-      .select()
-      .from(courseTabel)
-      .where(eq(courseTabel.cid, courseId)); // Changed from courseId to cid
+      if (!course) {
+        return NextResponse.json(
+          { error: "Course not found" },
+          { status: 404 }
+        );
+      }
 
-    console.log('Query result:', result); // Debug log
+      // Ensure the course belongs to the current user
+      if (course.userEmail !== userEmail) {
+        return NextResponse.json(
+          { error: "Unauthorized access to course" },
+          { status: 403 }
+        );
+      }
 
-    if (!result || result.length === 0) {
-      return NextResponse.json(
-        { error: "Course not found" },
-        { status: 404 }
-      );
+      return NextResponse.json(course);
+    } else {
+      // Get all courses for the current user
+      const courses = await db
+        .select()
+        .from(courseTabel)
+        .where(eq(courseTabel.userEmail, userEmail))
+        .orderBy(desc(courseTabel.id));
+
+      return NextResponse.json(courses);
     }
-
-    return NextResponse.json(result[0]);
   } catch (error) {
-    console.error("Error in API route:", error);
+    console.error("Error in courses API route:", error);
     return NextResponse.json(
-      { 
-        error: "Failed to fetch course",
-        details: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      {
+        error: "Failed to process request",
+        ...(process.env.NODE_ENV === "development" && {
+          details: error.message,
+          stack: error.stack,
+        }),
       },
       { status: 500 }
     );

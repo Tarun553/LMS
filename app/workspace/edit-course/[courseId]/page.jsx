@@ -10,6 +10,7 @@ import Image from 'next/image';
 import axios from 'axios';
 import CourseInfo from '../_components/courseInfo';
 
+
 export default function EditCoursePage() {
   const { courseId } = useParams();
   const router = useRouter();
@@ -56,6 +57,7 @@ export default function EditCoursePage() {
   return (
    <div>
       <CourseInfo course={course}/>
+     
    </div>
   );
 }
