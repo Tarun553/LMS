@@ -33,6 +33,9 @@ Schema:
 , User Input: 
 `
 
+export const ai = new GoogleGenAI({
+   apiKey: process.env.GEMINI_API_KEY,
+ });
 
 export async function POST(req) {
   const {courseId,...formData} = await req.json();
@@ -40,9 +43,6 @@ export async function POST(req) {
   
   async function main() {
     try {
-      const ai = new GoogleGenAI({
-        apiKey: process.env.GEMINI_API_KEY,
-      });
       
       const tools = [
         {
