@@ -15,7 +15,25 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const CourseList = () => {
   const [courseList, setCourseList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingCourseId, setLoadingCourseId] = useState(null); // track loading per course
   const { user } = useUser();
+
+  const onEnrollCourse = async (course) => {
+    try {
+      setLoadingCourseId(course.cid);
+      const result = await axios.post("/api/enroll-course", { courseId: course.cid });
+
+      if (result.data.error) {
+        alert(result.data.error);
+      } else if (result.data.res) {
+        alert(result.data.res);
+      }
+    } catch (error) {
+      console.error("Error enrolling course:", error);
+    } finally {
+      setLoadingCourseId(null);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -27,7 +45,6 @@ export const CourseList = () => {
     try {
       setLoading(true);
       const result = await axios.get("/api/courses");
-      console.log(result.data);
       setCourseList(result.data);
     } catch (error) {
       console.error("Error fetching courses:", error);
@@ -65,12 +82,8 @@ export const CourseList = () => {
       <h1 className="text-2xl font-semibold mb-6">Courses</h1>
       {courseList.length === 0 ? (
         <div className="text-center py-12 space-y-4">
-          <h2 className="text-2xl font-bold text-slate-800">
-            No courses found
-          </h2>
-          <p className="text-slate-600 mb-6">
-            Get started by creating a new course
-          </p>
+          <h2 className="text-2xl font-bold text-slate-800">No courses found</h2>
+          <p className="text-slate-600 mb-6">Get started by creating a new course</p>
           <Button className="bg-primary hover:bg-primary/90">
             Create New Course
           </Button>
@@ -129,8 +142,17 @@ export const CourseList = () => {
                 <Button variant="outline" size="sm">
                   View Details
                 </Button>
-                <Button size="sm" className="bg-primary hover:bg-primary/90">
-                  {course.includeVideo ? "Watch Now" : "Enroll Now"}
+                <Button
+                  disabled={loadingCourseId === course.cid}
+                  onClick={() => onEnrollCourse(course)}
+                  size="sm"
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {loadingCourseId === course.cid
+                    ? "Enrolling..."
+                    : course.includeVideo
+                    ? "Watch Now"
+                    : "Enroll Now"}
                 </Button>
               </CardFooter>
             </Card>

@@ -23,6 +23,7 @@ import { Label } from "./ui/label";
 import { Dialog } from "./ui/dialog";
 import { CourseFormDialog } from "./CourseFormDialog";
 import { CourseList } from "./courseList";
+import EnrollCourseList from "./EnrollCourseList";
 
 
 const AnimatedMenuToggle = ({ toggle, isOpen }) => (
@@ -374,6 +375,7 @@ const Sidebar = ({ showMainContent = true }) => {
           </div>
           
           {/* course list */}
+          <EnrollCourseList />
           <CourseList courses={courseList} />
          
         </div>
@@ -389,4 +391,4 @@ const Sidebar = ({ showMainContent = true }) => {
   );
 };
 
-export { Sidebar };
+export { Sidebar };                                                                                                                                 

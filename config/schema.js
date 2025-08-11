@@ -1,4 +1,3 @@
-
 import { integer, pgTable, varchar, boolean, json } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable("users", {
@@ -9,11 +8,10 @@ export const usersTable = pgTable("users", {
   subscriptionId: varchar(),
 });
 
-
-export const courseTabel = pgTable("courses",{
+export const courseTabel = pgTable("courses", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
 
-  cid: varchar().notNull(),
+  cid: varchar().notNull().unique(),
   title: varchar(),
   description: varchar(),
   chapters: integer().notNull(),
@@ -22,8 +20,20 @@ export const courseTabel = pgTable("courses",{
   difficulty: varchar().notNull(),
   category: varchar(),
   courseJson: json(),
-  userEmail: varchar('userEmail').references(()=>usersTable.email).notNull(),
-  bannerImage: varchar().default(''),
-  courseContent: json().default({})
+  userEmail: varchar("userEmail")
+    .references(() => usersTable.email)
+    .notNull(),
+  bannerImage: varchar().default(""),
+  courseContent: json().default({}),
+});
 
-})
+export const enrollCourseTabel = pgTable("enrollCourse", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  cid: varchar("cid")
+    .references(() => courseTabel.cid)
+    .notNull(),
+  userEmail: varchar("userEmail")
+    .references(() => usersTable.email)
+    .notNull(),
+  compeltedChapters: json(),
+});
