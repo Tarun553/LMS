@@ -9,6 +9,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Play,
+  Pause,
 } from "lucide-react";
 
 export default function VideoPlayer({
@@ -23,288 +25,284 @@ export default function VideoPlayer({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(null);
-  const iframeRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(true);
   const playerRef = useRef(null);
   const hideTimeoutRef = useRef(null);
+  const [showControls, setShowControls] = useState(true);
 
-  const validateVideoId = (id) => {
-    if (!id) return false;
-    // Basic validation for YouTube video IDs (11 alphanumeric characters)
-    return /^[a-zA-Z0-9_-]{11}$/.test(id);
-  };
+  const validateVideoId = (id) => /^[a-zA-Z0-9_-]{11}$/.test(id);
 
-  // Initialize YouTube Player API
   useEffect(() => {
     if (!videoId) {
       setError("No video ID provided");
       return;
     }
-
-    // Reset states when videoId changes
     setIsLoaded(false);
     setError(null);
+    setIsPlaying(true);
 
-    // Validate video ID format
     if (!validateVideoId(videoId)) {
-      console.error("Invalid YouTube video ID format:", videoId);
-      setError("Invalid video ID format. Please check the video reference.");
+      setError("Invalid video ID format.");
       setIsLoaded(true);
       return;
     }
 
-    // Load YouTube IFrame API if not already loaded
     if (!window.YT) {
       const tag = document.createElement("script");
       tag.src = "https://www.youtube.com/iframe_api";
-      const firstScriptTag = document.getElementsByTagName("script")[0];
-      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-      window.onYouTubeIframeAPIReady = initializePlayer;
+      document.body.appendChild(tag);
+      window.onYouTubeIframeAPIReady = initPlayer;
     } else {
-      initializePlayer();
+      initPlayer();
     }
 
-    // Cleanup function
-    return () => {
-      if (playerRef.current) {
-        try {
-          playerRef.current.destroy();
-        } catch (e) {
-          console.error("Error destroying YouTube player:", e);
-        }
-        playerRef.current = null;
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+      setShowControls(true);
+      resetControlsTimeout();
+    };
+
+    const handleKeyDown = (e) => {
+      // Toggle fullscreen with 'F' key
+      if (e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        toggleFullscreen();
       }
+      // Close with Escape key
+      else if (e.key === "Escape") {
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(console.error);
+        } else {
+          handleClose();
+        }
+      }
+      // Toggle play/pause with space/enter
+      else if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        togglePlayPause();
+      }
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      playerRef.current?.destroy?.();
       clearTimeout(hideTimeoutRef.current);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [videoId]);
 
-  const initializePlayer = () => {
-    if (!videoId || !window.YT) return;
+  const initPlayer = () => {
+    if (!window.YT) return;
 
-    try {
-      playerRef.current = new window.YT.Player("youtube-player", {
-        videoId: videoId,
-        playerVars: {
-          autoplay: 1,
-          rel: 0,
-          modestbranding: 1,
-          showinfo: 0,
-          playsinline: 1,
-          origin: window.location.origin,
-          enablejsapi: 1,
-          fs: 1, // Enable fullscreen button
-          controls: 1, // Show controls
-          disablekb: 0, // Enable keyboard controls
-          iv_load_policy: 3, // Hide annotations
-          cc_load_policy: 0, // Hide captions by default
+    playerRef.current = new window.YT.Player("youtube-player", {
+      videoId,
+      playerVars: {
+        autoplay: 1,
+        rel: 0,
+        modestbranding: 1,
+        playsinline: 1,
+        origin: window.location.origin,
+      },
+      events: {
+        onReady: () => {
+          setIsLoaded(true);
+          setTimeout(() => playerRef.current?.playVideo?.(), 500);
         },
-        events: {
-          onReady: (event) => {
-            console.log("YouTube player ready");
-            setIsLoaded(true);
-            // Set a small delay to ensure the player is fully ready
-            setTimeout(() => {
-              try {
-                event.target.playVideo();
-              } catch (e) {
-                console.error("Error playing video:", e);
-                setError("Error starting video playback. Please try again.");
-              }
-            }, 500);
-          },
-          onError: (event) => {
-            console.error("YouTube Player Error:", event.data);
-            let errorMessage = "Failed to load video. ";
-
-            // More specific error messages based on error code
-            switch (event.data) {
-              case 2:
-                errorMessage += "Invalid video ID.";
-                break;
-              case 5:
-                errorMessage +=
-                  "HTML5 player error. Please try refreshing the page.";
-                break;
-              case 100:
-                errorMessage += "Video not found or private.";
-                break;
-              case 101:
-              case 150:
-                errorMessage +=
-                  "Playback on other websites has been disabled by the video owner.";
-                break;
-              default:
-                errorMessage += "Please try again later.";
-            }
-
-            setError(errorMessage);
-            setIsLoaded(true);
-          },
-          onStateChange: (event) => {
-            // Handle player state changes
-            if (event.data === window.YT.PlayerState.ENDED && hasNext) {
-              onNext?.();
-            }
-          },
+        onError: () => setError("Failed to load video."),
+        onStateChange: (event) => {
+          if (event.data === window.YT.PlayerState.PLAYING) {
+            setIsPlaying(true);
+          } else if (event.data === window.YT.PlayerState.PAUSED) {
+            setIsPlaying(false);
+          } else if (event.data === window.YT.PlayerState.ENDED && hasNext) {
+            onNext?.();
+          }
         },
-      });
-    } catch (err) {
-      console.error("Error initializing YouTube player:", err);
-      setError(
-        "Failed to initialize video player. Please try refreshing the page."
-      );
-      setIsLoaded(true);
-    }
+      },
+    });
   };
 
-  // Toggle fullscreen
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(console.error);
-      setIsFullscreen(true);
+  const togglePlayPause = () => {
+    if (!playerRef.current) return;
+    if (isPlaying) {
+      playerRef.current.pauseVideo();
+      setIsPlaying(false);
     } else {
-      document.exitFullscreen();
-      setIsFullscreen(false);
+      playerRef.current.playVideo();
+      setIsPlaying(true);
     }
-  };
-
-  // Auto-hide controls after 3 seconds of inactivity
-  const resetHideTimeout = () => {
     setShowControls(true);
     clearTimeout(hideTimeoutRef.current);
     hideTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
   };
 
-  const [showControls, setShowControls] = useState(true);
+  const toggleFullscreen = () => {
+    const playerElement =
+      document.getElementById("youtube-player")?.parentElement;
+    if (!playerElement) return;
 
-  // Set up event listeners for controls
-  useEffect(() => {
-    const container = document.querySelector(".video-player-container");
-    if (!container) return;
+    try {
+      if (!document.fullscreenElement) {
+        if (playerElement.requestFullscreen) {
+          playerElement.requestFullscreen();
+        } else if (playerElement.webkitRequestFullscreen) {
+          /* Safari */
+          playerElement.webkitRequestFullscreen();
+        } else if (playerElement.msRequestFullscreen) {
+          /* IE11 */
+          playerElement.msRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          /* Safari */
+          document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+          /* IE11 */
+          document.msExitFullscreen();
+        }
+      }
+    } catch (err) {
+      console.error("Fullscreen error:", err);
+      setError("Failed to toggle fullscreen mode.");
+    }
 
-    container.addEventListener("mousemove", resetHideTimeout);
-    container.addEventListener("touchstart", resetHideTimeout);
+    setShowControls(true);
+    resetControlsTimeout();
+  };
 
-    return () => {
-      container.removeEventListener("mousemove", resetHideTimeout);
-      container.removeEventListener("touchstart", resetHideTimeout);
-      clearTimeout(hideTimeoutRef.current);
-    };
-  }, []);
+  const handleClose = () => {
+    // Exit fullscreen first if in fullscreen mode
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(console.error);
+    }
 
-  if (!videoId) {
-    return (
-      <div className="w-full aspect-video bg-gray-900 flex items-center justify-center text-white">
-        <p>No video available</p>
-      </div>
-    );
-  }
+    // Pause video if playing
+    if (playerRef.current?.getPlayerState) {
+      const state = playerRef.current.getPlayerState();
+      if (state === window.YT.PlayerState.PLAYING) {
+        playerRef.current.pauseVideo();
+      }
+    }
+
+    // Call the onClose callback
+    onClose?.();
+  };
+
+  const resetControlsTimeout = () => {
+    setShowControls(true);
+    clearTimeout(hideTimeoutRef.current);
+    hideTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
+  };
 
   return (
     <div
-      className="relative w-full bg-black rounded-xl overflow-hidden aspect-video video-player-container"
-      onMouseMove={resetHideTimeout}
-      onTouchStart={resetHideTimeout}
+      className="relative w-full bg-black rounded-xl overflow-hidden aspect-video"
+      onMouseMove={resetControlsTimeout}
+      onTouchStart={resetControlsTimeout}
     >
-      {/* YouTube Player Container */}
-      <div id="youtube-player" className="w-full h-full"></div>
+      <div id="youtube-player" className="w-full h-full" />
 
-      {/* Loading Overlay */}
-      {!isLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-90">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-white" />
-            <p className="text-white">Loading video...</p>
-          </div>
+      {!isLoaded && !error && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80">
+          <Loader2 className="w-10 h-10 animate-spin text-white" />
+          <p className="mt-3 text-white text-sm sm:text-base">
+            Loading video...
+          </p>
         </div>
       )}
 
-      {/* Error Message */}
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-90 p-4 text-center">
-          <div>
-            <p className="text-red-400 mb-4">{error}</p>
-            <Button
-              variant="outline"
-              onClick={() => window.location.reload()}
-              className="text-white border-white hover:bg-white/10"
-            >
-              Retry
-            </Button>
-          </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 p-4">
+          <p className="text-red-400 mb-4 text-sm sm:text-base text-center">
+            {error}
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => location.reload()}
+            className="text-white border-white/30 hover:bg-white/10"
+          >
+            Retry
+          </Button>
         </div>
       )}
 
-      {/* Controls Overlay */}
+      {/* Overlay Controls */}
       <div
         className={`absolute inset-0 transition-opacity duration-300 ${
           showControls ? "opacity-100" : "opacity-0"
-        }`}
-        style={{
-          background:
-            "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0) 100%)",
-          pointerEvents: "none",
-        }}
+        } flex flex-col justify-between`}
+        style={{ pointerEvents: showControls ? "auto" : "none" }}
       >
-        {/* Top Bar */}
-        <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center pointer-events-auto">
-          <h2 className="text-white font-medium text-lg line-clamp-1 pr-4">
+        {/* Top bar */}
+        <div className="w-full flex justify-between items-center p-3 sm:p-4 bg-gradient-to-b from-black/70 to-transparent">
+          <h2 className="text-white font-semibold text-sm sm:text-base md:text-lg truncate max-w-[60%]">
             {title}
           </h2>
-          <div className="flex items-center space-x-2">
+          <div className="flex gap-2">
             <Button
-              variant="ghost"
               size="icon"
-              className="text-white hover:bg-white/20"
+              variant="ghost"
+              className="text-white hover:bg-white/20 w-12 h-12"
               onClick={toggleFullscreen}
+              aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
             >
-              {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+              {isFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
             </Button>
             <Button
-              variant="ghost"
               size="icon"
-              className="text-white hover:bg-white/20"
-              onClick={onClose}
+              variant="ghost"
+              className="text-white hover:bg-white/20 w-12 h-12"
+              onClick={handleClose}
+              aria-label="Close video"
             >
-              <X size={20} />
+              <X size={24} />
             </Button>
           </div>
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="absolute inset-0 flex items-center justify-between px-2 pointer-events-none">
+        {/* Center Play/Pause Button */}
+        <div className="absolute inset-0 flex items-center justify-center">
           <Button
-            variant="ghost"
             size="icon"
-            className={`text-white hover:bg-white/20 pointer-events-auto ${
-              !hasPrevious ? "invisible" : ""
-            }`}
-            onClick={onPrevious}
-            disabled={!hasPrevious}
-          >
-            <ChevronLeft size={32} />
-          </Button>
-          <Button
             variant="ghost"
-            size="icon"
-            className={`text-white hover:bg-white/20 pointer-events-auto ${
-              !hasNext ? "invisible" : ""
-            }`}
-            onClick={onNext}
-            disabled={!hasNext}
+            className="text-white hover:bg-white/20 w-14 h-14"
+            onClick={togglePlayPause}
+            aria-label={isPlaying ? "Pause video" : "Play video"}
           >
-            <ChevronRight size={32} />
+            {isPlaying ? <Pause size={32} /> : <Play size={32} />}
           </Button>
         </div>
 
-        {/* Bottom Bar - Progress and Time */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 pointer-events-auto">
-          <div className="h-1 bg-white/30 rounded-full mb-2">
-            <div
-              className="h-full bg-red-600 rounded-full"
-              style={{ width: "0%" }}
-            ></div>
-          </div>
+        {/* Navigation */}
+        <div className="flex justify-between items-center px-3 sm:px-4 pb-4">
+          {hasPrevious && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="text-white hover:bg-white/20 w-12 h-12"
+              onClick={onPrevious}
+              aria-label="Previous video"
+            >
+              <ChevronLeft size={28} />
+            </Button>
+          )}
+          <div className="flex-1" /> {/* Spacer */}
+          {hasNext && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="text-white hover:bg-white/20 w-12 h-12"
+              onClick={onNext}
+              aria-label="Next video"
+            >
+              <ChevronRight size={28} />
+            </Button>
+          )}
         </div>
       </div>
     </div>
