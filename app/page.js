@@ -14,6 +14,7 @@ export default function Home() {
     {/* hardcode ai generated course  */}
     {/* our impact and testimonials */}
     {/* footer */}
+  
     </div>
   );
 }

@@ -1,16 +1,138 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Menu, X, User } from "lucide-react";
+import {
+  ArrowRight,
+  Menu,
+  X,
+  User,
+  FileTextIcon,
+  InputIcon,
+  GlobeIcon,
+  CalendarIcon,
+  BellIcon,
+} from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
 import Earth from "./ui/globe";
 import { Button } from "./ui/button";
 import Link from "next/link";
+import ContactUs from "@/components/ContactUs";
+import { BentoGrid, BentoCard } from "./ui/bento-grid";
+import { Component } from "./ui/testimonial-slider";
+import { Footerdemo } from "./ui/footer-section";
 
 const Hero2 = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isLoaded, isSignedIn } = useUser();
+
+
+
+  const testimonials = [
+    {
+      img: "https://randomuser.me/api/portraits/men/91.jpg",
+      quote:
+        "This AI-powered LMS transformed the way I learn — lessons are interactive, personalized, and incredibly engaging!",
+      name: "Bhura",
+      role: "Software Engineer, Acme LTD",
+    },
+    {
+      img: "https://randomuser.me/api/portraits/women/12.jpg",
+      quote:
+        "Our training completion rate doubled after switching to this AI LMS. The adaptive learning paths are a game changer.",
+      name: "Suresh",
+      role: "Learning Manager, Malika Inc.",
+    },
+    {
+      img: "https://randomuser.me/api/portraits/men/45.jpg",
+      quote:
+        "The AI tutor feels like a real instructor — answering questions instantly and tracking my progress effortlessly.",
+      name: "Ramesh",
+      role: "Data Analyst, Panda AI",
+    },
+  ];
+
+
+  const features = [
+    {
+      Icon: FileTextIcon,
+      name: "Interactive Courses",
+      description:
+        "Engage with interactive course materials and track your progress.",
+      href: "/courses",
+      cta: "Browse courses",
+      background: (
+        <img
+          src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+          alt="Interactive learning"
+          className="absolute inset-0 w-full h-full object-cover opacity-60"
+        />
+      ),
+      className: "lg:row-start-1 lg:row-end-4 lg:col-start-2 lg:col-end-3",
+    },
+    {
+      Icon: InputIcon,
+      name: "Expert Instructors",
+      description:
+        "Learn from industry professionals and subject matter experts.",
+      href: "/instructors",
+      cta: "Meet instructors",
+      background: (
+        <img
+          src="https://images.unsplash.com/photo-1541178735493-479c1a27ed24?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+          alt="Expert instructors"
+          className="absolute inset-0 w-full h-full object-cover opacity-60"
+        />
+      ),
+      className: "lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:row-end-3",
+    },
+    {
+      Icon: GlobeIcon,
+      name: "Learn Anywhere",
+      description: "Access your courses on any device, anytime, anywhere.",
+      href: "/mobile",
+      cta: "Get the app",
+      background: (
+        <img
+          src="https://images.unsplash.com/photo-1501504905252-473c47e087f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+          alt="Learn anywhere"
+          className="absolute inset-0 w-full h-full object-cover opacity-60"
+        />
+      ),
+      className: "lg:col-start-1 lg:col-end-2 lg:row-start-3 lg:row-end-4",
+    },
+    {
+      Icon: CalendarIcon,
+      name: "Track Progress",
+      description: "Monitor your learning journey and set personal goals.",
+      href: "/dashboard",
+      cta: "View dashboard",
+      background: (
+        <img
+          src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+          alt="Track progress"
+          className="absolute inset-0 w-full h-full object-cover opacity-60"
+        />
+      ),
+      className: "lg:col-start-3 lg:col-end-3 lg:row-start-1 lg:row-end-2",
+    },
+    {
+      Icon: BellIcon,
+      name: "Stay Updated",
+      description:
+        "Get notified about new courses, deadlines, and important updates.",
+      href: "/notifications",
+      cta: "Manage notifications",
+      background: (
+        <img
+          src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+          alt="Stay updated"
+          className="absolute inset-0 w-full h-full object-cover opacity-60"
+        />
+      ),
+      className: "lg:col-start-3 lg:col-end-3 lg:row-start-2 lg:row-end-4",
+    },
+  ];
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-black">
@@ -128,7 +250,8 @@ const Hero2 = () => {
           {/* Left side - Hero content */}
           <div className="w-full md:w-1/2 lg:pr-8">
             <h1 className="text-5xl font-bold leading-tight text-white md:text-6xl lg:text-7xl">
-            Smarter Learning,<br /> Smarter Pricing
+              Smarter Learning,
+              <br /> Smarter Pricing
             </h1>
             <p className="mt-6 max-w-xl text-lg text-gray-300">
               Generate comprehensive, structured courses on any topic instantly
@@ -137,9 +260,9 @@ const Hero2 = () => {
             </p>
             <div className="mt-10 flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
               <Link href="/workspace">
-              <Button className="h-12 rounded-full bg-white px-8 text-base font-medium text-black hover:bg-white/90">
-              Get Started For Free
-              </Button>
+                <Button className="h-12 rounded-full bg-white px-8 text-base font-medium text-black hover:bg-white/90">
+                  Get Started For Free
+                </Button>
               </Link>
               <Button className="h-12 rounded-full border border-gray-600 px-8 text-base font-medium text-white hover:bg-white/10">
                 Watch Demo
@@ -167,6 +290,40 @@ const Hero2 = () => {
             alt="Hero Image"
             className="relative w-full h-auto shadow-md grayscale-100 rounded"
           />
+        </div>
+        {/* feature section */}
+        <div>
+        <motion.h1 className="text-5xl font-bold leading-tight text-center mb-8 text-white md:text-6xl lg:text-7xl" 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+        >
+             Features
+            </motion.h1>
+          <BentoGrid className="lg:grid-rows-3">
+            {features.map((feature) => (
+              <BentoCard key={feature.name} {...feature} />
+            ))}
+          </BentoGrid>
+        </div>
+        {/* testimonial section */}
+        <div className="mt-20">
+        <motion.h1 className="text-5xl font-bold leading-tight text-center mb-8 text-white md:text-6xl lg:text-7xl" 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+        >
+            What Our Users Say's 
+            </motion.h1>
+          <Component testimonials={testimonials} />
+        </div>
+        {/* pricing */}
+        {/* footer */}
+      
+        <div className="mt-15">
+          <Footerdemo />
         </div>
       </div>
     </div>

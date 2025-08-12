@@ -8,6 +8,12 @@ const nextConfig = {
         port: "",
         pathname: "/v0/b/projects-2025-71366.firebasestorage.app/**",
       },
+      {
+        protocol: "https",
+        hostname: "randomuser.me",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
   experimental: {
