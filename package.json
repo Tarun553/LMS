@@ -28,7 +28,6 @@
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.4",
     "framer-motion": "^12.23.12",
-    "lightningcss": "^1.30.1",
     "lucide-react": "^0.539.0",
     "mime": "^4.0.7",
     "motion": "^12.23.12",
@@ -50,5 +49,4 @@
     "tsx": "^4.20.3",
     "tw-animate-css": "^1.3.6"
   }
-
 }
