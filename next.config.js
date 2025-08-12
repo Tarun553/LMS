@@ -10,7 +10,9 @@ const nextConfig = {
       },
     ],
   },
-  // Optional: Add other Next.js config options here
+  experimental: {
+    optimizeCss: false, // Disable lightningcss
+  },
 };
 
 module.exports = nextConfig;
