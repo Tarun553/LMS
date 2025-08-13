@@ -30,21 +30,21 @@ const Hero2 = () => {
 
   const testimonials = [
     {
-      img: "https://randomuser.me/api/portraits/men/91.jpg",
+      img: "https://i.pinimg.com/736x/be/18/09/be180986381f87edae21ce8ed731c416.jpg",
       quote:
         "This AI-powered LMS transformed the way I learn — lessons are interactive, personalized, and incredibly engaging!",
       name: "Bhura",
       role: "Software Engineer, Acme LTD",
     },
     {
-      img: "https://randomuser.me/api/portraits/women/12.jpg",
+      img: "https://i.pinimg.com/1200x/e4/99/40/e49940ea4066c2b4163591f7b8549e05.jpg",
       quote:
         "Our training completion rate doubled after switching to this AI LMS. The adaptive learning paths are a game changer.",
       name: "Suresh",
       role: "Learning Manager, Malika Inc.",
     },
     {
-      img: "https://randomuser.me/api/portraits/men/45.jpg",
+      img: "https://i.pinimg.com/1200x/48/6b/0a/486b0abdfc45c8a972bcea741f0b06bd.jpg",
       quote:
         "The AI tutor feels like a real instructor — answering questions instantly and tracking my progress effortlessly.",
       name: "Ramesh",
