@@ -36,10 +36,13 @@ const EnrollCourseList = () => {
 
   // Function to calculate progress
   const calculateProgress = (course, completedChapters) => {
-    if (!course?.courseJson?.course?.chapters) return 0;
+    const rawChapters = course?.courseJson?.course?.chapters;
+    const chapters = Array.isArray(rawChapters) ? rawChapters : [];
+
+    if (chapters.length === 0) return 0;
 
     // Total topics count
-    const totalTopics = course.courseJson.course.chapters.reduce(
+    const totalTopics = chapters.reduce(
       (total, chapter) => total + (chapter.topics?.length || 0),
       0
     );
